@@ -6,26 +6,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-omnivore/0.3.4/leaflet-omnivore.min.js"></script>
 </head>
 <body>
   <div id="map" style="height: 600px;"></div>
   <script>
     // Crear el mapa
-    var map = L.map('map').setView([-33.45, -70.65], 10); // Cambiar lat y lng según tu región.
+    var map = L.map('map').setView([-33.45, -70.65], 10); // Cambiar según tu región.
 
     // Agregar capa base
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Agregar capa KML (enlace directo al KML)
-    var kmlLayer = omnivore.kml('https://drive.google.com/uc?export=download&id=1-xZowjLMRDFIUKfBjrSTJWRF-qtCTyw3').addTo(map);
+    // URL del KMZ en Google Drive
+    var kmzUrl = "https://drive.google.com/uc?export=download&id=1-xZowjLMRDFIUKfBjrSTJWRF-qtCTyw3";
 
-    // Ajustar el mapa al KML
-    kmlLayer.on('ready', function() {
-      map.fitBounds(kmlLayer.getBounds());
-    });
+    // Descargar y procesar el KMZ
+    fetch(kmzUrl)
+      .then(response => response.arrayBuffer())
+      .then(data => {
+        // Descomprimir el KMZ con JSZip
+        JSZip.loadAsync(data).then(zip => {
+          // Buscar el archivo KML dentro del KMZ
+          Object.keys(zip.files).forEach(filename => {
+            if (filename.endsWith(".kml")) {
+              zip.files[filename].async("string").then(kmlContent => {
+                // Agregar el KML al mapa usando omnivore
+                var kmlLayer = omnivore.kml.parse(kmlContent).addTo(map);
+
+                // Ajustar el mapa al contenido del KML
+                kmlLayer.on("ready", function () {
+                  map.fitBounds(kmlLayer.getBounds());
+                });
+              });
+            }
+          });
+        });
+      })
+      .catch(error => console.error("Error al cargar el KMZ:", error));
   </script>
 </body>
 </html>
