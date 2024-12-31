@@ -21,32 +21,37 @@
     }).addTo(map);
 
     // URL del KMZ en Google Drive
-  var kmzUrl = "https://cors-anywhere.herokuapp.com/https://drive.google.com/uc?export=download&id=1-xZowjLMRDFIUKfBjrSTJWRF-qtCTyw3";
-;
+ var kmzUrl = "https://drive.google.com/uc?export=download&id=1-xZowjLMRDFIUKfBjrSTJWRF-qtCTyw3";
 
-    // Descargar y procesar el KMZ
-    fetch(kmzUrl)
-      .then(response => response.arrayBuffer())
-      .then(data => {
-        // Descomprimir el KMZ con JSZip
-        JSZip.loadAsync(data).then(zip => {
-          // Buscar el archivo KML dentro del KMZ
-          Object.keys(zip.files).forEach(filename => {
-            if (filename.endsWith(".kml")) {
-              zip.files[filename].async("string").then(kmlContent => {
-                // Agregar el KML al mapa usando omnivore
-                var kmlLayer = omnivore.kml.parse(kmlContent).addTo(map);
+fetch(kmzUrl)
+  .then(response => {
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    console.log("Descargando KMZ como binario...");
+    return response.arrayBuffer();
+  })
+  .then(data => {
+    console.log("Procesando archivo como ZIP...");
+    return JSZip.loadAsync(data);
+  })
+  .then(zip => {
+    console.log("Buscando archivo KML dentro del ZIP...");
+    let kmlFound = false;
 
-                // Ajustar el mapa al contenido del KML
-                kmlLayer.on("ready", function () {
-                  map.fitBounds(kmlLayer.getBounds());
-                });
-              });
-            }
-          });
+    Object.keys(zip.files).forEach(filename => {
+      if (filename.endsWith(".kml")) {
+        kmlFound = true;
+        zip.files[filename].async("string").then(kmlContent => {
+          console.log("Archivo KML encontrado, cargando en el mapa...");
+          var kmlLayer = omnivore.kml.parse(kmlContent).addTo(map);
+          map.fitBounds(kmlLayer.getBounds());
         });
-      })
-      .catch(error => console.error("Error al cargar el KMZ:", error));
+      }
+    });
+
+    if (!kmlFound) throw new Error("No se encontró un archivo KML dentro del KMZ.");
+  })
+  .catch(error => console.error("Error durante el proceso:", error));
+
   </script>
 </body>
 </html>
