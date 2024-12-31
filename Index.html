@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet KMZ Viewer</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+</head>
+<body>
+  <div id="map" style="height: 600px;"></div>
+  <script>
+    // Crear el mapa
+    var map = L.map('map').setView([-33.45, -70.65], 10); // Cambiar lat y lng según tu región.
+
+    // Agregar capa base
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Agregar capa KML (enlace directo al KML)
+    var kmlLayer = omnivore.kml('https://drive.google.com/uc?export=download&id=1-xZowjLMRDFIUKfBjrSTJWRF-qtCTyw3').addTo(map);
+
+    // Ajustar el mapa al KML
+    kmlLayer.on('ready', function() {
+      map.fitBounds(kmlLayer.getBounds());
+    });
+  </script>
+</body>
+</html>
